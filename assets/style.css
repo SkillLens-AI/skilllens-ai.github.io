@@ -756,6 +756,24 @@ section:first-of-type { padding-top: 56px; }
 .lens-metric.tone-neutral .val { color: var(--fg-3); }
 .lens-metric.tone-neutral .verdict-pill { background: var(--surface-3); color: var(--fg-3); border: 1px solid var(--line-strong); }
 
+/* Efficiency and Cost: overhead/neutral states recolored to the tile's
+   identity hue (teal / violet) instead of the global warn yellow.
+   - Most skills have negative Efficiency AND negative Cost simultaneously;
+     painting both tiles yellow at 48px swamps the lens area.
+   - Using the metric accent keeps the two tiles visually distinct from each
+     other and harmonizes with the dot identity color.
+   - "Good" stays green (universal positive). */
+.lens-metric.tone-warn[data-metric="efficiency"] .val,
+.lens-metric.tone-warn[data-metric="cost"] .val {
+  color: var(--metric-accent);
+}
+.lens-metric.tone-warn[data-metric="efficiency"] .verdict-pill,
+.lens-metric.tone-warn[data-metric="cost"] .verdict-pill {
+  color: var(--metric-accent);
+  background: color-mix(in srgb, var(--metric-accent) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--metric-accent) 32%, transparent);
+}
+
 .lens-tabs {
   display: flex;
   padding: 0 28px;
