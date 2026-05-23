@@ -695,6 +695,27 @@ section:first-of-type { padding-top: 56px; }
   color: var(--fg-4);
   font-weight: 700;
 }
+/* Metric-identity accent — a small color dot before the label.
+   Decoupled from tone (good/warn/etc.) so each axis has a stable identity
+   regardless of how the current skill scored. Kept low-saturation to avoid
+   competing with the value color. */
+.lens-metric[data-metric] > .lbl:first-child::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-right: 8px;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+  background: var(--metric-accent, var(--fg-4));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--metric-accent, var(--fg-4)) 22%, transparent);
+}
+.lens-metric[data-metric="utility"]    { --metric-accent: #C8A24F; } /* brand bronze */
+.lens-metric[data-metric="efficiency"] { --metric-accent: #14B8A6; } /* teal — time */
+.lens-metric[data-metric="cost"]       { --metric-accent: #A855F7; } /* violet — tokens */
+.lens-metric[data-metric="safety"]     { --metric-accent: #10B981; } /* emerald */
 .lens-metric .val {
   display: block;
   margin-top: 8px;
@@ -1279,7 +1300,19 @@ section:first-of-type { padding-top: 56px; }
   font-size: 11.5px;
 }
 .captured-panel-row:last-child { border-bottom: 0; }
-.captured-panel-row .k { color: var(--fg-3); }
+.captured-panel-row .k { color: var(--fg-3); display: inline-flex; align-items: center; gap: 7px; }
+.captured-panel-row .k::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--metric-accent, transparent);
+  flex-shrink: 0;
+}
+.captured-panel-row[data-metric="utility"]    { --metric-accent: #C8A24F; }
+.captured-panel-row[data-metric="efficiency"] { --metric-accent: #14B8A6; }
+.captured-panel-row[data-metric="cost"]       { --metric-accent: #A855F7; }
+.captured-panel-row[data-metric="safety"]     { --metric-accent: #10B981; }
 .captured-panel-row .v { color: var(--fg); font-weight: 700; }
 .captured-panel-row .v.good { color: var(--good); }
 .captured-panel-row .v.bad { color: var(--bad); }

@@ -277,7 +277,7 @@
       ? ("wi " + (u.wi_avg_time_s).toFixed(0) + "s  vs  wo " + (u.wo_avg_time_s).toFixed(0) + "s")
       : "time savings · paper Eq. 3";
     const costSub = (u.wo_avg_eff_tokens != null && u.wi_avg_eff_tokens != null)
-      ? ("wi " + Math.round(u.wi_avg_eff_tokens).toLocaleString() + "  vs  wo " + Math.round(u.wo_avg_eff_tokens).toLocaleString() + " tok")
+      ? ("wi " + Math.round(u.wi_avg_eff_tokens).toLocaleString() + "  vs  wo " + Math.round(u.wo_avg_eff_tokens).toLocaleString() + " tokens")
       : "effective input token savings · paper Eq. 3";
 
     const metrics = el("div", { class: "lens-metrics fade-in" }, [
@@ -337,7 +337,8 @@
   }
 
   function metricTile(lbl, val, unit, tier, sub) {
-    const tile = el("div", { class: "lens-metric tone-" + tier.tone });
+    const slug = String(lbl || "").toLowerCase();
+    const tile = el("div", { class: "lens-metric tone-" + tier.tone, "data-metric": slug });
     tile.appendChild(el("span", { class: "lbl" }, lbl));
     tile.appendChild(el("span", { class: "val" }, [
       document.createTextNode(val),
