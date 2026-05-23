@@ -145,14 +145,15 @@
       <summary>
         <span class="label">
           <h3>How we score a skill</h3>
-          <span class="hint">5-step pipeline · two independent axes</span>
+          <span class="hint">5-step pipeline · four independent axes</span>
         </span>
         <span class="chevron"></span>
       </summary>
       <div class="collapsible-body">
         <p class="lead" style="margin-top:0;color:var(--fg-3);max-width:720px;">
-          Every skill goes through the same pipeline. The same execution pass produces both axes —
-          effectiveness and safety — never combined into a single score.
+          Every skill goes through the same pipeline. The same execution pass produces four
+          independent axes — utility, efficiency, cost, and safety — never combined into a single
+          score.
         </p>
         <div class="flow-table">
           <div class="flow-row">
@@ -182,8 +183,31 @@
           <div class="flow-row">
             <span class="num">05</span>
             <span class="step">Report</span>
-            <span class="desc">Per-skill report with <code>pass_rate_gain</code>, <code>efficiency_score</code>, and <code>security.score = max(10, 100 − Σ base × existence × exploit)</code>.</span>
+            <span class="desc">Per-skill report with four scores: <code>utility = mean PRG over valid pairs</code>; <code>efficiency = mean (t<sub>wo</sub> − t<sub>wi</sub>) / t<sub>wo</sub></code>; <code>cost = mean (q̃<sub>wo</sub> − q̃<sub>wi</sub>) / q̃<sub>wo</sub></code>, q̃ = input − cache; <code>safety = max(10, 100 − Σ base × existence × exploit)</code>.</span>
             <span class="out">→ <code>skill_report.json</code></span>
+          </div>
+        </div>
+
+        <div class="flow-table" style="margin-top:18px;">
+          <div class="flow-row" style="grid-template-columns: 90px 110px 1fr;">
+            <span class="step" style="grid-column: 1 / 2;">Utility</span>
+            <span class="desc" style="grid-column: 2 / 3; font-family: var(--font-mono); font-size: 12px; color: var(--fg-2);">[0, 1]</span>
+            <span class="desc" style="grid-column: 3 / 4;">Mean pass-rate gain across matched wi/wo pairs. Clipped at zero per pair so regressions stay visible in diagnostics, not averaged into the headline. (Eq. 1–2)</span>
+          </div>
+          <div class="flow-row" style="grid-template-columns: 90px 110px 1fr;">
+            <span class="step">Efficiency</span>
+            <span class="desc" style="font-family: var(--font-mono); font-size: 12px; color: var(--fg-2);">(−∞, 1]</span>
+            <span class="desc">Relative wall-clock time saved by installing the skill, averaged over efficiency-valid pairs. Positive → faster than baseline; negative → time overhead. (Eq. 3, time term)</span>
+          </div>
+          <div class="flow-row" style="grid-template-columns: 90px 110px 1fr;">
+            <span class="step">Cost</span>
+            <span class="desc" style="font-family: var(--font-mono); font-size: 12px; color: var(--fg-2);">(−∞, 1]</span>
+            <span class="desc">Relative effective input tokens saved (q̃ = q<sub>input</sub> − q<sub>cache</sub>), averaged over the same efficiency-valid subset. Positive → cheaper than baseline; negative → token overhead. (Eq. 3, token term)</span>
+          </div>
+          <div class="flow-row" style="grid-template-columns: 90px 110px 1fr;">
+            <span class="step">Safety</span>
+            <span class="desc" style="font-family: var(--font-mono); font-size: 12px; color: var(--fg-2);">[10, 100]</span>
+            <span class="desc">Perfect score 100 minus the confidence-weighted sum of static + dynamic findings: w(H)=15, w(M)=10, w(L)=5, scaled by existence × exploitability confidence. Floor at 10. (Eq. 6)</span>
           </div>
         </div>
       </div>
@@ -227,8 +251,9 @@
               <div class="captured-panel-head">
                 <span>SkillLens</span><span>↗ open</span>
               </div>
-              <div class="captured-panel-row"><span class="k">Effectiveness</span><span class="v good">+16.7 pp</span></div>
-              <div class="captured-panel-row"><span class="k">Efficiency</span><span class="v">0.31</span></div>
+              <div class="captured-panel-row"><span class="k">Utility</span><span class="v good">+16.7 pp</span></div>
+              <div class="captured-panel-row"><span class="k">Efficiency</span><span class="v good">+0.18</span></div>
+              <div class="captured-panel-row"><span class="k">Cost</span><span class="v">+0.04</span></div>
               <div class="captured-panel-row"><span class="k">Safety</span><span class="v good">96 / 100</span></div>
               <div class="captured-panel-row"><span class="k">Findings  H/M/L</span><span class="v">0 / 0 / 0</span></div>
               <div class="captured-panel-row"><span class="k">Verdict</span><span class="v good">Adopt</span></div>

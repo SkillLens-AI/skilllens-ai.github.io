@@ -112,7 +112,24 @@
     if (e == null || isNaN(e))    return { tone: "neutral", word: "Unknown" };
     if (e >= 0.30)                return { tone: "good",    word: "Faster" };
     if (e > 0)                    return { tone: "warn",    word: "Mixed" };
+    if (e === 0)                  return { tone: "neutral", word: "Neutral" };
     return { tone: "neutral", word: "Overhead" };
+  }
+  function costTier(c) {
+    if (c == null || isNaN(c))    return { tone: "neutral", word: "Unknown" };
+    if (c >= 0.30)                return { tone: "good",    word: "Cheaper" };
+    if (c > 0)                    return { tone: "warn",    word: "Mixed" };
+    if (c === 0)                  return { tone: "neutral", word: "Neutral" };
+    return { tone: "neutral", word: "Overhead" };
+  }
+  // Relative savings (paper Eq. 3): (wo - wi) / wo. Positive => skill saved resources.
+  function relSavings(wo, wi) {
+    if (wo == null || wi == null || !isFinite(wo) || !isFinite(wi) || wo <= 0) return null;
+    return (wo - wi) / wo;
+  }
+  function fmtSigned(v, digits) {
+    if (v == null || isNaN(v)) return "—";
+    return (v >= 0 ? "+" : "") + v.toFixed(digits == null ? 2 : digits);
   }
   function safetyTier(s, findings) {
     if (s == null) return { tone: "neutral", word: "Untested" };
@@ -194,7 +211,7 @@
       tone: "warn",
       word: "MARGINAL",
       glyph: "○",
-      reason: "Small effectiveness gain with no triggered risks. Worth installing if it solves a specific task.",
+      reason: "Small utility gain with no triggered risks. Worth installing if it solves a specific task.",
     };
   }
 
@@ -208,9 +225,13 @@
     const u = detail.utility || {};
     const s = detail.safety || {};
 
-    const effT = effectivenessTier(u.pass_rate_gain);
-    const eff2 = efficiencyTier(u.efficiency_score);
-    const safT = safetyTier(s.score, s.findings);
+    const timeSavings  = relSavings(u.wo_avg_time_s,    u.wi_avg_time_s);
+    const tokenSavings = relSavings(u.wo_avg_eff_tokens, u.wi_avg_eff_tokens);
+
+    const effT  = effectivenessTier(u.pass_rate_gain);
+    const eff2  = efficiencyTier(timeSavings);
+    const costT = costTier(tokenSavings);
+    const safT  = safetyTier(s.score, s.findings);
     const verdict = overallVerdict(u, s);
 
     view.innerHTML = "";
@@ -249,10 +270,18 @@
     view.appendChild(verdictBlock);
 
     // ---- METRICS ----
+    const effSub  = (u.wo_avg_time_s != null && u.wi_avg_time_s != null)
+      ? ("wi " + (u.wi_avg_time_s).toFixed(0) + "s  vs  wo " + (u.wo_avg_time_s).toFixed(0) + "s")
+      : "time savings · paper Eq. 3";
+    const costSub = (u.wo_avg_eff_tokens != null && u.wi_avg_eff_tokens != null)
+      ? ("wi " + Math.round(u.wi_avg_eff_tokens).toLocaleString() + "  vs  wo " + Math.round(u.wo_avg_eff_tokens).toLocaleString() + " tok")
+      : "effective input token savings · paper Eq. 3";
+
     const metrics = el("div", { class: "lens-metrics fade-in" }, [
-      metricTile("Effectiveness", fmtPP(u.pass_rate_gain), "pp", effT,
+      metricTile("Utility", fmtPP(u.pass_rate_gain), "pp", effT,
         u.total_items ? "wi  " + (u.wi_passed_items || 0) + "  vs  wo  " + (u.wo_passed_items || 0) + "   ·  " + u.total_items + " judge items" : ""),
-      metricTile("Efficiency", u.efficiency_score == null ? "—" : fmtFraction(u.efficiency_score, 2), null, eff2, "time + token savings"),
+      metricTile("Efficiency", fmtSigned(timeSavings, 2), null, eff2, effSub),
+      metricTile("Cost", fmtSigned(tokenSavings, 2), null, costT, costSub),
       metricTile("Safety", s.score == null ? "—" : Number(s.score).toFixed(1), "/100", safT,
         ((s.findings || []).length === 0) ? "no findings" : (s.findings || []).filter(function (f) { return f.risk_triggered === true; }).length + " of " + (s.findings || []).length + " triggered"),
     ]);
@@ -361,9 +390,9 @@
     }
 
     inner.appendChild(el("div", { class: "reading" }, [
-      document.createTextNode("Read effectiveness and safety as "),
-      el("strong", null, "two independent axes"),
-      document.createTextNode(". A skill can be highly effective and unsafe; a safe skill can have zero gain. The lens reports both verbatim."),
+      document.createTextNode("Read utility, efficiency, cost, and safety as "),
+      el("strong", null, "four independent axes"),
+      document.createTextNode(". A skill can be highly useful yet unsafe; a fast skill can use more tokens; a safe skill can have zero gain. The lens reports all four verbatim."),
     ]));
 
     wrap.appendChild(inner);
@@ -446,7 +475,7 @@
     bars.appendChild(barRow("WI", "wi", wiPct, wi, total));
     const gainPP = total > 0 ? ((wi - wo) / total * 100) : 0;
     const dEl = el("div", { class: "compare-delta" });
-    dEl.appendChild(document.createTextNode("Δ effectiveness "));
+    dEl.appendChild(document.createTextNode("Δ utility "));
     const strong = el("strong", { class: gainPP < 0 ? "neg" : "" }, (gainPP > 0 ? "+" : "") + gainPP.toFixed(1) + " pp");
     dEl.appendChild(strong);
     dEl.appendChild(document.createTextNode("  ·  attributable to the skill, not the model."));
@@ -764,7 +793,7 @@
       "  M " + ((s.findings || {}).M || 0) +
       "  L " + ((s.findings || {}).L || 0) +
       "  ·  triggered " + (s.findings_triggered || 0) +
-      "  ·  effectiveness " + (s.pass_rate_gain == null ? "—" : ((s.pass_rate_gain >= 0 ? "+" : "") + (s.pass_rate_gain * 100).toFixed(1) + " pp"))));
+      "  ·  utility " + (s.pass_rate_gain == null ? "—" : ((s.pass_rate_gain >= 0 ? "+" : "") + (s.pass_rate_gain * 100).toFixed(1) + " pp"))));
     item.appendChild(body);
 
     const meta = el("div", { class: "inbox-item-meta" });

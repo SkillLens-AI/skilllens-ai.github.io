@@ -671,9 +671,14 @@ section:first-of-type { padding-top: 56px; }
 
 .lens-metrics {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   border-bottom: 1px solid var(--line);
   background: var(--surface-1);
+}
+@media (max-width: 960px) {
+  .lens-metrics { grid-template-columns: repeat(2, 1fr); }
+  .lens-metric:nth-child(2) { border-right: 0; }
+  .lens-metric:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
 }
 .lens-metric {
   padding: 22px 28px 22px;
