@@ -110,17 +110,15 @@
   }
   function efficiencyTier(e) {
     if (e == null || isNaN(e))    return { tone: "neutral", word: "Unknown" };
-    if (e >= 0.30)                return { tone: "good",    word: "Faster" };
-    if (e > 0)                    return { tone: "warn",    word: "Mixed" };
-    if (e === 0)                  return { tone: "neutral", word: "Neutral" };
-    return { tone: "neutral", word: "Overhead" };
+    if (e >=  0.10)               return { tone: "good",    word: "Faster" };
+    if (e >= -0.05)               return { tone: "neutral", word: "Comparable" };
+    return { tone: "warn", word: "Overhead" };
   }
   function costTier(c) {
     if (c == null || isNaN(c))    return { tone: "neutral", word: "Unknown" };
-    if (c >= 0.30)                return { tone: "good",    word: "Cheaper" };
-    if (c > 0)                    return { tone: "warn",    word: "Mixed" };
-    if (c === 0)                  return { tone: "neutral", word: "Neutral" };
-    return { tone: "neutral", word: "Overhead" };
+    if (c >=  0.10)               return { tone: "good",    word: "Cheaper" };
+    if (c >= -0.05)               return { tone: "neutral", word: "Comparable" };
+    return { tone: "warn", word: "Overhead" };
   }
   // Relative savings (paper Eq. 3): (wo - wi) / wo. Positive => skill saved resources.
   function relSavings(wo, wi) {
@@ -130,6 +128,11 @@
   function fmtSigned(v, digits) {
     if (v == null || isNaN(v)) return "—";
     return (v >= 0 ? "+" : "") + v.toFixed(digits == null ? 2 : digits);
+  }
+  // Format a savings ratio as a signed percent (e.g. -0.405 -> "-40.5").
+  function fmtSavingsPct(v, digits) {
+    if (v == null || isNaN(v)) return "—";
+    return (v >= 0 ? "+" : "") + (v * 100).toFixed(digits == null ? 1 : digits);
   }
   function safetyTier(s, findings) {
     if (s == null) return { tone: "neutral", word: "Untested" };
@@ -280,8 +283,8 @@
     const metrics = el("div", { class: "lens-metrics fade-in" }, [
       metricTile("Utility", fmtPP(u.pass_rate_gain), "pp", effT,
         u.total_items ? "wi  " + (u.wi_passed_items || 0) + "  vs  wo  " + (u.wo_passed_items || 0) + "   ·  " + u.total_items + " judge items" : ""),
-      metricTile("Efficiency", fmtSigned(timeSavings, 2), null, eff2, effSub),
-      metricTile("Cost", fmtSigned(tokenSavings, 2), null, costT, costSub),
+      metricTile("Efficiency", fmtSavingsPct(timeSavings, 1),  "%", eff2,  effSub),
+      metricTile("Cost",       fmtSavingsPct(tokenSavings, 1), "%", costT, costSub),
       metricTile("Safety", s.score == null ? "—" : Number(s.score).toFixed(1), "/100", safT,
         ((s.findings || []).length === 0) ? "no findings" : (s.findings || []).filter(function (f) { return f.risk_triggered === true; }).length + " of " + (s.findings || []).length + " triggered"),
     ]);
